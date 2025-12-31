@@ -1,5 +1,6 @@
 const { Swipe, Match, User, Profile, Preferences, Block } = require('../models');
 const { Op } = require('sequelize');
+const { createNotification } = require('./notificationController');
 
 // Mesafe hesaplama (Haversine formula)
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -118,18 +119,18 @@ const swipe = async (req, res) => {
         }
       });
       
-      if (mutualLike) {
-        const match = await Match.create({
-          user_id_1: Math.min(userId, targetUserId),
-          user_id_2: Math.max(userId, targetUserId)
-        });
-        
-        return res.json({ 
-          match: true, 
-          matchId: match.id,
-          message: 'Eşleşme!' 
-        });
-      }
+    if (mutualLike) {
+  const match = await Match.create({
+    user_id_1: Math.min(userId, targetUserId),
+    user_id_2: Math.max(userId, targetUserId)
+  });
+  
+  // Her iki kullanıcıya bildirim gönder
+  await createNotification(userId, 'match', 'Yeni Eşleşme!', 'Yeni bir eşleşmen var', { matchId: match.id });
+  await createNotification(targetUserId, 'match', 'Yeni Eşleşme!', 'Yeni bir eşleşmen var', { matchId: match.id });
+  
+  return res.json({ match: true, matchId: match.id, message: 'Eşleşme!' });
+}
     }
     
     res.json({ match: false });

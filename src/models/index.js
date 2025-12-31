@@ -8,6 +8,7 @@ const MatchModel = require('./Match');
 const MessageModel = require('./Message');
 const PreferencesModel = require('./Preferences');
 const BlockModel = require('./Block');
+const NotificationModel = require('./Notification');
 
 // Modelleri sequelize bağlantısıyla oluştur
 const User = UserModel(sequelize);
@@ -17,8 +18,14 @@ const Match = MatchModel(sequelize);
 const Message = MessageModel(sequelize);
 const Preferences = PreferencesModel(sequelize);
 const Block = BlockModel(sequelize);
+const Notification = NotificationModel(sequelize);
 
 // İLİŞKİLER (Relationships)
+
+
+User.hasMany(Notification, { foreignKey: 'user_id' });
+Notification.belongsTo(User, { foreignKey: 'user_id' });
+
 
 // User - Profile (1'e 1)
 User.hasOne(Profile, { foreignKey: 'user_id' });
@@ -65,5 +72,6 @@ module.exports = {
   Message,
   Preferences,
   Block,
+  Notification,
   sequelize
 };
