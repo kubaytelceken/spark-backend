@@ -4,7 +4,7 @@ const { Message, Match } = require('../models');
 const setupSocket = (io) => {
   // Token doğrulama middleware
   io.use((socket, next) => {
-    const token = socket.handshake.auth.token;
+    const token = socket.handshake.auth.token; //Bağlantıdan gelen token 
     
     if (!token) {
       return next(new Error('Token gerekli'));
@@ -20,6 +20,7 @@ const setupSocket = (io) => {
   });
 
   io.on('connection', (socket) => {
+    // Birisi bağlandığında burası çalışır
     console.log(`✅ Kullanıcı bağlandı: ${socket.userId}`);
     
     // Kullanıcıyı kendi odasına ekle (bildirimler için)

@@ -51,6 +51,10 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, async () => {
   try {
     await sequelize.authenticate();
+
+     await sequelize.sync({ alter: true });
+
+     
     console.log('✅ Database bağlantısı başarılı');
     console.log(`🚀 Server ${PORT} portunda çalışıyor`);
     console.log('🔌 WebSocket aktif');
