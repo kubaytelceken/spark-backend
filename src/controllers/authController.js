@@ -1,6 +1,9 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { User, Profile } = require('../models');
+const { OAuth2Client } = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const appleSignin = require('apple-signin-auth');
 
 // Token oluşturma fonksiyonu
 const generateToken = (userId) => {
@@ -66,4 +69,76 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+const googleLogin = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+
+    const payload = ticket.getPayload();
+    const email = payload.email;
+    const googleId = payload.sub;
+
+    let user = await User.findOne({
+      where: { provider: 'google', provider_id: googleId }
+    });
+
+    if (!user) {
+      user = await User.create({
+        email,
+        provider: 'google',
+        provider_id: googleId
+      });
+
+      await Profile.create({ user_id: user.id });
+      await Preferences.create({ user_id: user.id });
+    }
+
+    res.json({ token: createToken(user), user });
+
+  } catch (err) {
+    console.error(err);
+    res.status(401).json({ error: 'Google login başarısız' });
+  }
+};
+
+const appleLogin = async (req, res) => {
+  try {
+    const { identityToken } = req.body;
+
+    const appleUser = await appleSignin.verifyIdToken(identityToken, {
+      audience: process.env.APPLE_CLIENT_ID,
+      ignoreExpiration: false
+    });
+
+    const appleId = appleUser.sub;
+    const email = appleUser.email || null;
+
+    let user = await User.findOne({
+      where: { provider: 'apple', provider_id: appleId }
+    });
+
+    if (!user) {
+      user = await User.create({
+        email,
+        provider: 'apple',
+        provider_id: appleId
+      });
+
+      await Profile.create({ user_id: user.id });
+      await Preferences.create({ user_id: user.id });
+    }
+
+    res.json({ token: createToken(user), user });
+
+  } catch (err) {
+    console.error(err);
+    res.status(401).json({ error: 'Apple login başarısız' });
+  }
+};
+
+
+module.exports = { register, login,googleLogin,appleLogin };

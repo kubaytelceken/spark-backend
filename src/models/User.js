@@ -18,6 +18,16 @@ module.exports = (sequelize) => {
     password_hash: {
       type: DataTypes.STRING(255),
       allowNull: false
+    },
+     provider: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'local' // local | google | apple
+    },
+
+    provider_id: {
+      type: DataTypes.STRING,
+      allowNull: true
     }
   }, {
     tableName: 'users',
