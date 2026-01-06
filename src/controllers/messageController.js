@@ -1,15 +1,10 @@
-const { Message, Match } = require('../models');
+const messageService = require("../services/messageService");
 
 // Mesajları getir
 const getMessages = async (req, res) => {
   try {
     const { matchId } = req.params;
-    
-    const messages = await Message.findAll({
-      where: { match_id: matchId, deleted_at: null },
-      order: [['created_at', 'ASC']]
-    });
-    
+    const messages = await messageService.getMessages(matchId);
     res.json(messages);
   } catch (error) {
     console.error(error);
@@ -24,11 +19,7 @@ const sendMessage = async (req, res) => {
     const { matchId } = req.params;
     const { content } = req.body;
     
-    const message = await Message.create({
-      match_id: matchId,
-      sender_id: userId,
-      content
-    });
+    const message = await messageService.sendMessage({userId,matchId,content});
     
     res.status(201).json(message);
   } catch (error) {
@@ -42,10 +33,7 @@ const markAsRead = async (req, res) => {
   try {
     const { messageId } = req.params;
     
-    await Message.update(
-      { is_read: true },
-      { where: { id: messageId } }
-    );
+    await messageService.markAsRead(messageId);
     
     res.json({ success: true });
   } catch (error) {
@@ -59,10 +47,7 @@ const deleteMessage = async (req, res) => {
   try {
     const { messageId } = req.params;
     
-    await Message.update(
-      { deleted_at: new Date() },
-      { where: { id: messageId } }
-    );
+    await messageService.deleteMessage(messageId);
     
     res.json({ success: true });
   } catch (error) {

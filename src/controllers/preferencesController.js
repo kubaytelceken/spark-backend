@@ -1,15 +1,11 @@
-const { Preferences } = require('../models');
+const preferencesService = require("../services/preferencesService");
 
 // Tercihleri getir
 const getPreferences = async (req, res) => {
   try {
     const userId = req.user.id;
     
-    let preferences = await Preferences.findOne({ where: { user_id: userId } });
-    
-    if (!preferences) {
-      preferences = await Preferences.create({ user_id: userId });
-    }
+    let preferences = await preferencesService.getPreferences(userId);
     
     res.json(preferences);
   } catch (error) {
@@ -24,23 +20,7 @@ const updatePreferences = async (req, res) => {
     const userId = req.user.id;
     const { age_min, age_max, distance_max, interested_genders } = req.body;
     
-    let preferences = await Preferences.findOne({ where: { user_id: userId } });
-    
-    if (!preferences) {
-      preferences = await Preferences.create({
-        user_id: userId,
-        age_min,
-        age_max,
-        distance_max,
-        interested_genders
-      });
-    } else {
-      await Preferences.update(
-        { age_min, age_max, distance_max, interested_genders },
-        { where: { user_id: userId } }
-      );
-      preferences = await Preferences.findOne({ where: { user_id: userId } });
-    }
+    let preferences = await preferencesService.updatePreferences({userId,age_min, age_max, distance_max, interested_genders});
     
     res.json(preferences);
   } catch (error) {

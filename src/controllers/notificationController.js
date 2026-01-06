@@ -1,16 +1,12 @@
-console.log('NOTIFICATION CONTROLLER LOADED');
-const { Notification } = require('../models');
+
+const notificationService = require("../services/notificationService");
 
 // Bildirimleri getir
 const getNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
     
-    const notifications = await Notification.findAll({
-      where: { user_id: userId },
-      order: [['created_at', 'DESC']],
-      limit: 50
-    });
+    const notifications = await notificationService.getNotifications(userId);
     
     res.json(notifications);
   } catch (error) {
@@ -24,10 +20,7 @@ const markAsRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
     
-    await Notification.update(
-      { is_read: true },
-      { where: { id: notificationId, user_id: req.user.id } }
-    );
+    await await notificationService.markAsRead(notificationId);
     
     res.json({ success: true });
   } catch (error) {
@@ -41,10 +34,7 @@ const markAllAsRead = async (req, res) => {
   try {
     const userId = req.user.id;
     
-    await Notification.update(
-      { is_read: true },
-      { where: { user_id: userId, is_read: false } }
-    );
+    await notificationService.markAllAsRead(userId);
     
     res.json({ success: true });
   } catch (error) {
@@ -53,19 +43,6 @@ const markAllAsRead = async (req, res) => {
   }
 };
 
-// Bildirim oluştur (internal kullanım)
-const createNotification = async (userId, type, title, message, data = null) => {
-  try {
-    await Notification.create({
-      user_id: userId,
-      type,
-      title,
-      message,
-      data
-    });
-  } catch (error) {
-    console.error('Bildirim oluşturulamadı:', error);
-  }
-};
 
-module.exports = { getNotifications, markAsRead, markAllAsRead, createNotification };
+
+module.exports = { getNotifications, markAsRead, markAllAsRead };

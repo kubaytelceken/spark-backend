@@ -1,24 +1,20 @@
-const { User, Profile, Preferences } = require('../models');
-const path = require('path');
+const profileService = require("../services/profileService");
 
 // Profil getir
 const getProfile = async (req, res) => {
   try {
     const { userId } = req.params;
-    
-    const profile = await Profile.findOne({
-      where: { user_id: userId },
-      include: { model: User, attributes: ['email'] }
-    });
-    
-    if (!profile) {
-      return res.status(404).json({ error: 'Profil bulunamadı' });
-    }
-    
+
+    const profile = await profileService.getProfileByUserId(userId);
     res.json(profile);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Profil getirilemedi' });
+
+    if (error.message === "PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Profil bulunamadı" });
+    }
+
+    res.status(500).json({ error: "Profil getirilemedi" });
   }
 };
 
@@ -26,18 +22,35 @@ const getProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, age, bio, gender, interested_in, latitude, longitude } = req.body;
-    
-    await Profile.update(
-      { name, age, bio, gender, interested_in, latitude, longitude },
-      { where: { user_id: userId } }
-    );
-    
-    const profile = await Profile.findOne({ where: { user_id: userId } });
+    const {
+      name,
+      age,
+      bio,
+      gender,
+      interested_in,
+      latitude,
+      longitude,
+    } = req.body;
+
+    const profile = await profileService.updateProfile(userId, {
+      name,
+      age,
+      bio,
+      gender,
+      interested_in,
+      latitude,
+      longitude,
+    });
+
     res.json(profile);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Profil güncellenemedi' });
+
+    if (error.message === "PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Profil bulunamadı" });
+    }
+
+    res.status(500).json({ error: "Profil güncellenemedi" });
   }
 };
 
@@ -45,23 +58,23 @@ const updateProfile = async (req, res) => {
 const addPhoto = async (req, res) => {
   try {
     const userId = req.user.id;
-    
+
     if (!req.file) {
-      return res.status(400).json({ error: 'Fotoğraf yüklenmedi' });
+      return res.status(400).json({ error: "Fotoğraf yüklenmedi" });
     }
-    
+
     const photoUrl = `/uploads/${req.file.filename}`;
-    
-    const profile = await Profile.findOne({ where: { user_id: userId } });
-    const photos = profile.photos || [];
-    photos.push(photoUrl);
-    
-    await Profile.update({ photos }, { where: { user_id: userId } });
-    
-    res.json({ photoUrl, photos });
+    const photos = await profileService.addPhoto(userId, photoUrl);
+
+    res.status(201).json({ photoUrl, photos });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Fotoğraf eklenemedi' });
+
+    if (error.message === "PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Profil bulunamadı" });
+    }
+
+    res.status(500).json({ error: "Fotoğraf eklenemedi" });
   }
 };
 
@@ -70,17 +83,27 @@ const deletePhoto = async (req, res) => {
   try {
     const userId = req.user.id;
     const { photoUrl } = req.body;
-    
-    const profile = await Profile.findOne({ where: { user_id: userId } });
-    const photos = profile.photos.filter(p => p !== photoUrl);
-    
-    await Profile.update({ photos }, { where: { user_id: userId } });
-    
+
+    if (!photoUrl) {
+      return res.status(400).json({ error: "Fotoğraf URL gerekli" });
+    }
+
+    const photos = await profileService.deletePhoto(userId, photoUrl);
     res.json({ photos });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Fotoğraf silinemedi' });
+
+    if (error.message === "PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Profil bulunamadı" });
+    }
+
+    res.status(500).json({ error: "Fotoğraf silinemedi" });
   }
 };
 
-module.exports = { getProfile, updateProfile, addPhoto, deletePhoto };
+module.exports = {
+  getProfile,
+  updateProfile,
+  addPhoto,
+  deletePhoto,
+};
